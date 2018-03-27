@@ -7,9 +7,17 @@ from urllib.request import urlretrieve
 from urllib.error import HTTPError, URLError
 
 import re
+import os
 
-def getBingPicLinks():
-    htmlUrl = "https://bing.ioliu.cn"
+links = []
+pages = set()
+
+def getBingPicLinks(page):
+    downloadLinks = []
+
+    homepageUrl = "https://bing.ioliu.cn"
+    htmlUrl = homepageUrl + page
+    print(htmlUrl) 
     try:
         html = urlopen(htmlUrl)
     except (HTTPError, URLError) as e:
@@ -19,21 +27,50 @@ def getBingPicLinks():
         # print(html.read();
         bsObj = BeautifulSoup(html.read(), 'html.parser')
         # print(bsObj.prettify())
-        links = []
         for link in bsObj.find_all(href=re.compile("force=download")):
-            downloadLink = htmlUrl + link.get('href')
+            downloadLink = homepageUrl + link.get('href')
             print(downloadLink)
-            links.append(downloadLink)
+            downloadLinks.append(downloadLink)
 
     except AttributeError as e:
         return None
 
-    return links
+    # return links
+    download_pics(downloadLinks)
+
+def getPageLinks(pageUrl):
+
+    htmlUrl = "https://bing.ioliu.cn"
+    try:
+        html = urlopen(htmlUrl + pageUrl)
+    except (HTTPError, URLError) as e:
+        return None
+    
+    try:
+        # print(html.read();
+        bsObj = BeautifulSoup(html.read(), 'html.parser')
+        # print(bsObj.prettify())
+        for link in bsObj.find_all(href=re.compile("/?p=")):
+            pagelink = link.get('href')
+            if pagelink not in pages:
+                pages.add(pagelink)
+                print(pagelink)
+                getBingPicLinks(pagelink)
+                getPageLinks(pagelink)
+
+    except AttributeError as e:
+        return None
+
+    return pages
+
 
 
 def download_pics(pic_links):
     for link in pic_links:
         localPath = "E:/bingPics/"
+        if not os.path.exists(localPath) :
+            os.makedirs(localPath)
+
         file_name = link.split('/')[-1]
 
         file_name = file_name.split('?')[0]
@@ -50,8 +87,10 @@ def download_pics(pic_links):
 def main():
     """docstring for main"""
     # createUI()
-    downloadLinks = getBingPicLinks()
+    pageUrls = getPageLinks("")
+    downloadLinks = getBingPicLinks(pageUrls)
     download_pics(downloadLinks)
+
     print("main done")
     
 if __name__ == '__main__':
