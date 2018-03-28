@@ -9,14 +9,35 @@ from urllib.error import HTTPError, URLError
 import re
 import os
 
-links = []
-pages = set()
+pages = []
+homepageUrl = "https://bing.ioliu.cn"
 
-def getBingPicLinks(page):
+def getPageLinks(pageUrl):
+    # 遍历当前页面链接
+    getBingPicLinks(homepageUrl + pageUrl)
+
+    # 获取并进入下一节点
+    try:
+        html = urlopen(homepageUrl + pageUrl)
+    except (HTTPError, URLError) as e:
+        return None
+
+    try:
+        bsObj = BeautifulSoup(html.read(), 'html.parser')
+        for link in bsObj.find_all(href=re.compile("/?p=")):
+            pagelink = link.get('href')
+            if pagelink not in pages:
+                print("Add new page: " + pagelink)
+                pages.append(pagelink)
+                getPageLinks(pagelink)
+
+    except AttributeError as e:
+        return None
+
+def getBingPicLinks(htmlUrl):
     downloadLinks = []
 
-    homepageUrl = "https://bing.ioliu.cn"
-    htmlUrl = homepageUrl + page
+    # htmlUrl = homepageUrl + page
     print(htmlUrl) 
     try:
         html = urlopen(htmlUrl)
@@ -38,33 +59,6 @@ def getBingPicLinks(page):
     # return links
     download_pics(downloadLinks)
 
-def getPageLinks(pageUrl):
-
-    htmlUrl = "https://bing.ioliu.cn"
-    try:
-        html = urlopen(htmlUrl + pageUrl)
-    except (HTTPError, URLError) as e:
-        return None
-    
-    try:
-        # print(html.read();
-        bsObj = BeautifulSoup(html.read(), 'html.parser')
-        # print(bsObj.prettify())
-        for link in bsObj.find_all(href=re.compile("/?p=")):
-            pagelink = link.get('href')
-            if pagelink not in pages:
-                pages.add(pagelink)
-                print(pagelink)
-                getBingPicLinks(pagelink)
-                getPageLinks(pagelink)
-
-    except AttributeError as e:
-        return None
-
-    return pages
-
-
-
 def download_pics(pic_links):
     for link in pic_links:
         localPath = "E:/bingPics/"
@@ -77,8 +71,9 @@ def download_pics(pic_links):
         
         print("Downloading file:%s" % file_name)
         localPath = localPath + file_name + ".jpg"
-        urlretrieve(link, localPath)
-        print("%s downloaded!\n" % file_name)
+        if not os.path.isfile(localPath) :
+            urlretrieve(link, localPath)
+            print("%s downloaded!\n" % file_name)
 
     print("All Pics downloaded!")
 
@@ -86,10 +81,9 @@ def download_pics(pic_links):
 
 def main():
     """docstring for main"""
+    print("main start")
     # createUI()
-    pageUrls = getPageLinks("")
-    downloadLinks = getBingPicLinks(pageUrls)
-    download_pics(downloadLinks)
+    getPageLinks("")
 
     print("main done")
     
