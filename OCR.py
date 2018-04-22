@@ -13,12 +13,12 @@ import pytesseract
 
 
 def parsePicData():
-    words = pytesseract.image_to_string(Image.open("D:\\Project\\GitHub\\WebScrapProj\\cache.png"), lang='eng')
+    words = pytesseract.image_to_string(Image.open("cache.png"), lang='eng')
     print(words)
     print("parsePicData")
 
 def testImage():
-    im= Image.open("D:\\Project\\GitHub\\WebScrapProj\\cache.png")
+    im= Image.open("cache.png")
     print(im)
     print(im.format,im.size,im.mode)
 
